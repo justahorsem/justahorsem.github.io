@@ -17,13 +17,9 @@ paginate: 8
 excerpt_separator: <!-- more -->
 
 footer-links:
-  zhihu: 
   email: xiongyunhan@outlook.com
-  facebook:
   github: justahorsem
   rss: welcome!
-  twitter: 
-  youtube:
 
 footer-text: Copyright (c) 2024-2025 justahorse
 
