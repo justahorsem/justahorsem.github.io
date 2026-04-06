@@ -1,5 +1,5 @@
-name: "Pianfan's blog"
-description: "翩帆的个人技术博客"
+name: "justahorse's blog"
+description: "justahorse的个人技术博客"
 
 avatar: /images/avatar.png
 favicon: /images/favicon.ico
@@ -25,7 +25,7 @@ footer-links:
   twitter: 
   youtube:
 
-footer-text: Copyright (c) 2024-2025 Pianfan
+footer-text: Copyright (c) 2024-2025 justahorse
 
 url: https://justahorsem.github.io
 baseurl: ""
