@@ -31,7 +31,7 @@ permalink: /tags/
             {% if post.link %}
               <a href="{{ post.link }}">
             {% else %}
-              <a href="{{ site.baseurl }}{{ post.url }}">
+              <a href="{{ post.url | relative_url }}">
             {% endif %}
                 {{ post.title }}
               </a>

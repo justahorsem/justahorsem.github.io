@@ -6,7 +6,7 @@ layout: default
   
   <h1>{{ page.title }}</h1>
 
-  <div clsss="meta">
+  <div class="meta">
     <span class="date">
       {{ page.date | date: "%Y-%m-%d" }}
     </span>
@@ -14,7 +14,7 @@ layout: default
     <ul class="tag">
       {% for tag in page.tags %}
       <li>
-        <a href="{{ site.url }}{{ site.baseurl }}/tags#{{ tag }}">
+        <a href="{{ '/tags' | relative_url }}#{{ tag }}">
           {{ tag }}
         </a>
       </li>
@@ -28,21 +28,23 @@ layout: default
     {{ content }}
   </div>
 
+  {% if page.comments != false %}
   {% include disqus.html %}
   {% include gitalk.html %}
+  {% endif %}
 </article>
 
 <div class="pagination">
   {% if page.previous.url %}
     <span class="prev" >
-      <a href="{{ site.url }}{{ site.baseurl }}{{ page.previous.url }}">
+      <a href="{{ page.previous.url | relative_url }}">
         ← 上一篇
       </a>
     </span>
   {% endif %}
   {% if page.next.url %}
     <span class="next" >
-      <a href="{{ site.url }}{{ site.baseurl }}{{ page.next.url }}">
+      <a href="{{ page.next.url | relative_url }}">
         下一篇 →
       </a>
     </span>

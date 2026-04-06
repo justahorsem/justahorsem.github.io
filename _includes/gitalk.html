@@ -1,10 +1,9 @@
-{% if site.gitalk %}
+{% if site.gitalk and site.gitalk.clientID and site.gitalk.repo and site.gitalk.owner and (site.gitalk.proxy or site.gitalk.clientSecret) %}
 <div class="comments">
     <div id="gitalk-container"></div>
     <script>
-        const gitalk = new Gitalk({
+        const gitalkConfig = {
           clientID: "{{ site.gitalk.clientID }}",
-          clientSecret: "{{ site.gitalk.clientSecret }}",
           repo: "{{ site.gitalk.repo }}",
           owner: "{{ site.gitalk.owner }}",
           admin: ["{{ site.gitalk.owner }}"],
@@ -12,7 +11,14 @@
           distractionFreeMode: false,  // Facebook-like distraction free mode
           title: "{{ page.title }}",
           language: "zh-CN"
-        })
+        };
+        {% if site.gitalk.proxy %}
+        gitalkConfig.proxy = "{{ site.gitalk.proxy }}";
+        {% elsif site.gitalk.clientSecret %}
+        gitalkConfig.clientSecret = "{{ site.gitalk.clientSecret }}";
+        {% endif %}
+
+        const gitalk = new Gitalk(gitalkConfig)
         
         gitalk.render('gitalk-container')
     </script>
