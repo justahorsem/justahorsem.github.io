@@ -32,6 +32,18 @@ categories: [AI]
 
 ### 2.3 epsilon-greedy 策略
 为了平衡探索与利用，采用 `epsilon-greedy` 策略：
+
+```mermaid
+graph TD
+    START[开始决策] --> CONDITION{产生随机数 p < epsilon?}
+    CONDITION -- 是 (Yes) --> EXPLORE[随机选择一个动作<br/>(探索 Exploration)]
+    CONDITION -- 否 (No) --> EXPLOIT[选择预估价值最大的动作<br/>(利用 Exploitation)]
+    EXPLORE --> ENV((环境执行动作))
+    EXPLOIT --> ENV
+    ENV -->|获得 Reward| UPDATE[更新动作价值 Q]
+    UPDATE -.-> START
+```
+
 - 以概率 `epsilon` 随机探索。
 - 以概率 `1 - epsilon` 选择当前估计值最大的动作。
 
@@ -86,7 +98,14 @@ $$
 
 ### 4.1 引入 MDP
 真正的 RL 面临的问题不仅仅是“动作与奖励”，还需要考虑**状态 (State)**的流转：当前动作会将环境带入什么样的新状态，又会如何影响未来的收益？
-为此，需要引入马尔可夫决策过程（MDP）。
+为此，需要引入马尔可夫决策过程（MDP）。它的核心智能体-环境交互循环如下：
+
+```mermaid
+graph LR
+    AGENT[Agent 智能体] -- "执行动作 (Action A_t)" --> ENV[Environment 环境]
+    ENV -- "新状态 (State S_{t+1})" --> AGENT
+    ENV -- "奖励 (Reward R_{t+1})" --> AGENT
+```
 
 ### 4.2 MDP 的核心五元组
 - `S` (State)：状态集合
@@ -112,6 +131,17 @@ $$
 ### 4.4 Bellman 方程核心思想
 Bellman 方程是价值函数的递归关系。其核心直觉：
 **当前价值 = 当前奖励 + 折扣后的未来价值**
+
+通过状态转移树（Bellman Backup Tree）可以直观地看到这种“后向回传”：
+
+```mermaid
+graph TD
+    S((状态 S_t)) -->|"执行动作 A_t"| Q["动作价值 Q(S_t, A_t)"]
+    Q -->|"环境按照概率转移"| S_NEXT((下一状态 S_{t+1}))
+    Q -.->|"产生即时奖励"| R["奖励 R_{t+1}"]
+    S_NEXT -->|"折扣因子 γ"| V_NEXT["未来价值 V(S_{t+1})"]
+    V_NEXT -.->|"递归回传"| Q
+```
 
 - **Bellman Expectation Equation（期望方程）**：
   $$ V^\pi(s) = \mathbb{E}[R_{t+1} + \gamma V^\pi(S_{t+1}) | S_t = s] $$
