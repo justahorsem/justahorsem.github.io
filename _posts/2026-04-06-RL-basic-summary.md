@@ -35,12 +35,12 @@ categories: [AI]
 
 ```mermaid
 graph TD
-    START[开始决策] --> CONDITION{产生随机数 p < epsilon?}
-    CONDITION -- 是 (Yes) --> EXPLORE[随机选择一个动作<br/>(探索 Exploration)]
-    CONDITION -- 否 (No) --> EXPLOIT[选择预估价值最大的动作<br/>(利用 Exploitation)]
-    EXPLORE --> ENV((环境执行动作))
+    START["开始决策"] --> CONDITION{"随机数 p < epsilon ?"}
+    CONDITION -- "是 (Yes)" --> EXPLORE["随机选择动作 (探索 Exploration)"]
+    CONDITION -- "否 (No)" --> EXPLOIT["选预估最高价值动作 (利用 Exploitation)"]
+    EXPLORE --> ENV(("环境执行动作"))
     EXPLOIT --> ENV
-    ENV -->|获得 Reward| UPDATE[更新动作价值 Q]
+    ENV -->|"获得 Reward"| UPDATE["更新动作价值 Q"]
     UPDATE -.-> START
 ```
 
@@ -102,7 +102,7 @@ $$
 
 ```mermaid
 graph LR
-    AGENT[Agent 智能体] -- "执行动作 (Action A_t)" --> ENV[Environment 环境]
+    AGENT["Agent 智能体"] -- "执行动作 (Action A_t)" --> ENV["Environment 环境"]
     ENV -- "新状态 (State S_{t+1})" --> AGENT
     ENV -- "奖励 (Reward R_{t+1})" --> AGENT
 ```
@@ -136,8 +136,8 @@ Bellman 方程是价值函数的递归关系。其核心直觉：
 
 ```mermaid
 graph TD
-    S((状态 S_t)) -->|"执行动作 A_t"| Q["动作价值 Q(S_t, A_t)"]
-    Q -->|"环境按照概率转移"| S_NEXT((下一状态 S_{t+1}))
+    S(("状态 S_t")) -->|"执行动作 A_t"| Q["动作价值 Q(S_t, A_t)"]
+    Q -->|"环境按照概率转移"| S_NEXT(("下一状态 S_{t+1}"))
     Q -.->|"产生即时奖励"| R["奖励 R_{t+1}"]
     S_NEXT -->|"折扣因子 γ"| V_NEXT["未来价值 V(S_{t+1})"]
     V_NEXT -.->|"递归回传"| Q
