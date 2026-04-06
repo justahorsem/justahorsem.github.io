@@ -17,6 +17,28 @@
     </div>
 
     {% include analytics.html %}
+
+    <!-- Mermaid JS Support -->
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+      document.addEventListener("DOMContentLoaded", function() {
+        let hasMermaid = false;
+        let blocks = document.querySelectorAll(".language-mermaid code, code.language-mermaid");
+        blocks.forEach(function(code) {
+          hasMermaid = true;
+          let wrapper = code.closest('.language-mermaid') || code.closest('pre') || code;
+          let div = document.createElement("div");
+          div.className = "mermaid";
+          div.style.textAlign = 'center';
+          div.textContent = code.textContent;
+          wrapper.parentElement.replaceChild(div, wrapper);
+        });
+        if (hasMermaid) {
+          mermaid.run({ querySelector: '.mermaid' });
+        }
+      });
+    </script>
   </body>
 
   {% if page.toc==true %}
