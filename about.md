@@ -6,7 +6,7 @@ permalink: /about/
 
 ## 关于我
 
-你好，我是justahorse，目前是一名计算机专业的在校生。
+你好，我是justahorse，目前是一名在校生。
 
 这是我基于 GitHub Pages 平台创建的个人博客，用于记录我的学习与心得，或者介绍我做过的项目。
 
