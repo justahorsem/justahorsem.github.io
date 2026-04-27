@@ -1,172 +1,122 @@
 ---
 layout: post
-title: "强化学习基础：Bandit, UCB 与 MDP 初探"
+title: "强化学习基础：多臂老虎机 (MAB), 置信上限 (UCB) 与 MDP 理论初探"
 date: 2026-04-06 12:00:00 +0800
 tags: [Reinforcement Learning, 学习笔记]
 categories: [AI]
 ---
 
-本文总结了强化学习（Reinforcement Learning, RL）入门阶段的核心概念，重点梳理了多臂老虎机（Multi-armed Bandit）、置信上限（UCB）算法以及马尔可夫决策过程（MDP）和贝尔曼方程（Bellman Equation）的基础知识。
+本文是对强化学习（Reinforcement Learning, RL）理论基石的基础性总结，旨在以严谨的学术视角剖析多臂老虎机模型（Multi-Armed Bandit, MAB）、探索与利用困境（Exploration vs Exploitation Dilemma）、乃至马尔可夫决策过程（Markov Decision Process, MDP）与贝尔曼递归方程（Bellman Equation）的内在数学逻辑。
 
-## 1. 核心学习脉络
+## 1. 理论起点：多臂老虎机模型 (MAB)
 
-本次学习主要围绕以下三个部分展开：
-- **Bandit 问题** 与 `Exploration vs Exploitation`（探索与利用）的权衡。
-- **UCB（Upper Confidence Bound）** 算法：“更聪明的探索”策略。
-- **MDP 框架**、`Return`（回报）、`Value`（价值）与 **Bellman Backup**。
+### 1.1 问题定义
+`Multi-armed Bandit`（多臂老虎机）是剥离了环境状态转移机制的极简决策模型。在系统设定中，存在 $K$ 个可选的独立动作集合，每次执行任一动作 $a_t$ 后，环境将基于其幕后的潜在真实概率分布输出收益度量（Reward, $R_t$）。
+
+相较于具备完整时间步延展的强化学习架构，Bandit 模型略去了**状态的马尔可夫演变**与**信用分配**的复杂性，直面机器学习智能体最初始的核心矛盾：**探索与利用困境 (Exploration vs Exploitation)**。
+
+### 1.2 Exploration vs Exploitation 构建
+- **Exploitation（利用）**：即基于经验预估贪心行事，选择在历史统计表现中最优的期望策略方案。优点是保障当前收益下限，缺点是极易使系统收敛并永久困顿于次优解。
+- **Exploration（探索）**：投入当前行动力去尝试不具统计优势，甚至未知领域的策略方案。目的在于矫正分布偏差并挖掘潜在更优的长期解。
 
 ---
 
-## 2. Bandit 与 epsilon-greedy 策略
+## 2. 基线算法：Epsilon-Greedy 探索策略
 
-### 2.1 什么是 Multi-armed Bandit？
-`Multi-armed Bandit`（多臂老虎机）是最简单的决策学习问题，它包含多个可选动作，每次选择一个动作后环境会返回一个随机奖励。目标是最大化长期平均奖励。
+为定量平衡上述困境，业界引入 $\epsilon$-greedy（Epsilon 贪婪算法）作为基准对比。
 
-相比于完整的 RL 框架，Bandit 没有**状态转移**、**长期信用分配 (Credit Assignment)** 和**价值函数的复杂递归**。但它引入了 RL 最核心的困境：**Exploration vs Exploitation**。
-
-### 2.2 Exploration vs Exploitation
-- **Exploitation（利用）**：优先选择当前已知最优的动作。
-- **Exploration（探索）**：尝试其他动作，寻找潜在的更优解。
-
-只利用不探索，容易陷入局部最优（过早陷入错误选择）；只探索不利用，则长期奖励低下。
-
-### 2.3 epsilon-greedy 策略
-为了平衡探索与利用，采用 `epsilon-greedy` 策略：
+### 2.1 决策逻辑
+算法采用刚性的概率指派法：
 
 ```mermaid
 graph TD
-    START["开始决策"] --> CONDITION{"随机数 p < epsilon ?"}
-    CONDITION -- "是 (Yes)" --> EXPLORE["随机选择动作 (探索 Exploration)"]
-    CONDITION -- "否 (No)" --> EXPLOIT["选预估最高价值动作 (利用 Exploitation)"]
-    EXPLORE --> ENV(("环境执行动作"))
+    START["交互决策点 t"] --> CONDITION{"在均匀分布中随机采样 p < ε ?"}
+    CONDITION -- "成立 (Exploration)" --> EXPLORE["均匀随机选取非贪心动作族集"]
+    CONDITION -- "不成立 (Exploitation)" --> EXPLOIT["绝对贪心：argmax Q(a)"]
+    EXPLORE --> ENV(("目标环境"))
     EXPLOIT --> ENV
-    ENV -->|"获得 Reward"| UPDATE["更新动作价值 Q"]
+    ENV -->|"输出单步即时奖赏 R_t"| UPDATE["应用增量逼近公式更新 Q_t(a)"]
     UPDATE -.-> START
 ```
 
-- 以概率 `epsilon` 随机探索。
-- 以概率 `1 - epsilon` 选择当前估计值最大的动作。
-
-动作价值的更新公式（增量式样本平均）：
-
-$$
-Q_n = Q_{n-1} + \frac{1}{n} * (R_n - Q_{n-1})
-$$
-
-> **直觉理解**：新估计值 = 旧估计值 + 修正项（即误差带来的反馈）。高于预期则向上修正，低于预期则向下修正。
-
-### 2.4 实验结论
-通过对不同 `epsilon` 值的实验结果对比：
-- `epsilon = 0.0`（全贪心）容易过早陷入次优选择。
-- `epsilon = 0.1` 表现较均衡，少量探索足以发现最优动作。
-- `epsilon = 0.3` 探索过度，虽然能发现最优动作，但在次优动作上耗费了更多步数。
+### 2.2 增量更新公式解析
+基于大数定理的滑动平均可由如下差分形式计算动作价值分布 $Q_n(a)$：
+$$ Q_n = Q_{n-1} + \frac{1}{n} [R_n - Q_{n-1}] $$
+> **数学意义阐述**：此处 $R_n - Q_{n-1}$ 即为**时序差分误差（TD Error）的雏形**。通过将新观测的奖励 $R_n$ 与过往经验锚点预估值作差，得到反馈修正梯度。常数系数 $1/n$ 充当学习率，保障迭代计算序列的收敛性要求。
 
 ---
 
-## 3. UCB 算法：不确定性驱动的探索
+## 3. 进阶算法：UCB 不确定性边界驱动
 
-### 3.1 从 epsilon-greedy 到 UCB
-`epsilon-greedy` 的探索是盲目的（纯随机）。UCB（Upper Confidence Bound）的核心思想是建立在**不确定性**上的：
+### 3.1 核心理论与 Optimism in the Face of Uncertainty
+$\epsilon$-greedy 的随机策略充斥着全局盲目性，为解决该问题，置信上限（Upper Confidence Bound, UCB）算法基于**“面对未知保持乐观”**的思想进行重构。通过数理统计的方法，为样本量短缺的选项赋予可观的探索溢价（Exploration Premium）。
 
-$$
-Score(a) = Estimated\_Value(a) + Exploration\_Bonus(a)
-$$
+### 3.2 公式拆解与霍夫丁边界
+UCB 在单步动作筛选函数定义如下：
+$$ A_t = \arg\max_a \left[ Q_t(a) + c \sqrt{\frac{\ln t}{N_t(a)}} \right] $$
 
-即不仅关注动作当前的预估价值，还关注该动作尚未被充分了解的程度。
+**各项底层作用机制详解**：
+1. **经验均值项 $Q_t(a)$**：充当**利用 (Exploitation)** 核心指标，代表统计期望下界。
+2. **探索补偿项 $c \sqrt{\dots}$**：是由霍夫丁独立不等式（Hoeffding's Inequality）推导收缩出的高置信探索边界指标。
+   - **分母 $N_t(a)$**：对动作进行的样本收集越丰富，此项越膨胀拉低补偿，加速收敛并减少盲测浪费资源。
+   - **分子 $\ln t$**：随时间全局推进，对数增长平缓拉升那些早已被冷落的选项，避免动作被永久饿死截断。
+   - **常数超调 $c$**：系统整体不确定性接受度系数。
 
-### 3.2 UCB 更新公式
-常见形式：
-
-$$
-UCB(a) = Q(a) + c \sqrt{\frac{\ln(t)}{N(a)}}
-$$
-
-- `Q(a)`：当前估计值
-- `t`：当前总步数
-- `N(a)`：动作 `a` 被选择的次数
-- `c`：探索强度调节参数
-
-> **直觉理解**：`N(a)` 越小，说明对该动作的信心越低，相应的探索奖励（Bonus）越大，从而鼓励尝试。随着不断尝试，Bonus 递减。
-
-### 3.3 实验结论
-- UCB 相比 `epsilon-greedy` 更具策略性，其探索更集中于未被充分尝试的动作。
-- 参数 `c` 越小越偏向利用，越大越偏向探索。但单次随机种子的结果具有偶然性，不能仅凭一次实验武断认定超参数的绝对优劣。
+**在学术上的理论意义**：UCB 可以被数学论证出拥有在时间序列极长尺度下，受限于严苛的低阶对数复杂度 $O(\ln t)$ 渐近懊悔值（Regret）上限。这意味着它能够被认定为极其逼近全局最优决策界限的算法手段。
 
 ---
 
-## 4. MDP 框架与 Bellman 方程
+## 4. 体系演变：马尔可夫决策过程 (MDP)
 
-### 4.1 引入 MDP
-真正的 RL 面临的问题不仅仅是“动作与奖励”，还需要考虑**状态 (State)**的流转：当前动作会将环境带入什么样的新状态，又会如何影响未来的收益？
-为此，需要引入马尔可夫决策过程（MDP）。它的核心智能体-环境交互循环如下：
+仅研究静态 Bandit 在于理解决策矛盾机制，真正智能体面临的复杂连续统往往牵扯动态关联系统。由此，需正式引入马尔可夫架构（MDP）。
+
+### 4.1 MDP 动力转移图论
+MDP 体系结构可由如下经典的智能体-环境互动流形描绘：
 
 ```mermaid
 graph LR
-    AGENT["Agent 智能体"] -- "执行动作 (Action A_t)" --> ENV["Environment 环境"]
-    ENV -- "新状态 (State S_{t+1})" --> AGENT
-    ENV -- "奖励 (Reward R_{t+1})" --> AGENT
+    AGENT["Agent 智能体策略单元"] -- "施加动作分布 A_t" --> ENV["Environment 状态转移机"]
+    ENV -- "新一轮状态迁移空间 S_{t+1}" --> AGENT
+    ENV -- "响应标量奖励 R_{t+1}" --> AGENT
 ```
 
-### 4.2 MDP 的核心五元组
-- `S` (State)：状态集合
-- `A` (Action)：动作集合
-- `P` (Transition Probability)：状态转移概率
-- `R` (Reward)：奖励函数
-- `gamma` (Discount Factor)：折扣因子
+### 4.2 MDP 五大基石构件
+- **State ($\mathcal{S}$)**：全部系统状态的度量空间。
+- **Action ($\mathcal{A}$)**：合法操控输入的向量维度。
+- **Transition Probability ($\mathcal{P}$)**：内建马尔可夫随机矩阵，映射 $\mathbb{P}[S_{t+1}|S_t, A_t]$ 概率转移。
+- **Reward ($\mathcal{R}$)**：表征特定切片状态质量的即时奖励定义。
+- **Discount Factor ($\gamma$)**：未来折现率常数 $\gamma \in [0,1]$，用于惩罚久远收益从而促成级数函数收敛。
 
-### 4.3 Return 与 Value
-- **Return (G_t)**：未来折扣奖励总和。
-  
-  $$
-  G_t = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + ...
-  $$
-  
-  体现了 RL 关注长期总收益的核心诉求（`gamma` 越接近 1 则越看重长期收益）。
+### 4.3 终局目标定义: Return
+Return 的数学级数累加即代表长期效用的绝对指标：
+$$ G_t = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + ... = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1} $$
 
-- **状态价值 (State Value, V)**：$V^\pi(s)$ 表示在策略 $\pi$ 下，从状态 $s$ 出发未来的期望回报。
-- **动作价值 (Action Value, Q)**：$Q^\pi(s, a)$ 表示在状态 $s$ 执行动作 $a$ 后，遵循策略 $\pi$ 的期望回报。
+---
 
-  > **简单区分**：`V` 衡量“在这个状态有多好”，而 `Q` 衡量“在这个状态下做这个动作有多好”。
+## 5. 算法核心引擎：Bellman 递归方程
 
-### 4.4 Bellman 方程核心思想
-Bellman 方程是价值函数的递归关系。其核心直觉：
-**当前价值 = 当前奖励 + 折扣后的未来价值**
-
-通过状态转移树（Bellman Backup Tree）可以直观地看到这种“后向回传”：
+Bellman 递推证明了当前瞬时价值，恰等于单步即时期望辅以折现的后续价值之和。这一方程为后续价值迭代建立了不灭根基。
 
 ```mermaid
 graph TD
-    S(("状态 S_t")) -->|"执行动作 A_t"| Q["动作价值 Q(S_t, A_t)"]
-    Q -->|"环境按照概率转移"| S_NEXT(("下一状态 S_{t+1}"))
-    Q -.->|"产生即时奖励"| R["奖励 R_{t+1}"]
-    S_NEXT -->|"折扣因子 γ"| V_NEXT["未来价值 V(S_{t+1})"]
-    V_NEXT -.->|"递归回传"| Q
+    S(("特定环境基底 S_t")) -->|"经由策略 π 进行执行 A_t"| Q["当前动作复合预期价值 Q(S_t, A_t)"]
+    Q -->|"服从环境物理固有概率转移矩阵 P"| S_NEXT(("后继多分支状态 S_{t+1}"))
+    Q -.->|"分离获取本步即时环境回报"| R["瞬时回报 R_{t+1}"]
+    S_NEXT -->|"乘搭无穷折现系数 γ"| V_NEXT["远期递归价值收敛项 V(S_{t+1})"]
+    V_NEXT -.->|"向上逐点回传播撒"| Q
 ```
 
-- **Bellman Expectation Equation（期望方程）**：
-  $$ V^\pi(s) = \mathbb{E}[R_{t+1} + \gamma V^\pi(S_{t+1}) | S_t = s] $$
-- **Bellman Optimality Equation（最优方程）**：
-  $$ V^*(s) = \max_a \mathbb{E}[R_{t+1} + \gamma V^*(S_{t+1}) | S_t = s, A_t = a] $$
-
-Bellman Update 是 RL 算法中能够进行增量计算和向后传递信息的理论基石。
+**Bellman Expectation Equation (贝尔曼期望评估方程)**：
+$$ V^\pi(s) = \mathbb{E}_\pi [R_{t+1} + \gamma V^\pi(S_{t+1}) | S_t = s] $$
+**Bellman Optimality Equation (贝尔曼最优寻根方程)**：
+$$ V^*(s) = \max_{a \in \mathcal{A}} \mathbb{E} [R_{t+1} + \gamma V^*(S_{t+1}) | S_t = s, A_t = a] $$
 
 ---
 
-## 5. 常见易混淆点澄清
-1. **Reward** 是单步即时奖励，**Return** 是累积的回报。
-2. **Return** 是一次特定轨迹的累积值，**Value** 是期望的 Return。
-3. **V(s)** 只和状态相关，**Q(s, a)** 与动作直接相关。
-4. **Bellman backup** 不是直接计算整个 Return，而是做“一步的递归更新”。
-5. 单次实验“表现最好”的超参数，并不等于统计意义上的“全局最优”。
+## 6. 学术总结与下一步延展
 
----
+经过上述理论剥丝抽茧，我们已明确掌握了从最初的静态博弈（Bandit模型内的 $\epsilon$-greedy 与 UCB 无偏置搜索方法），逐步建立起了面向动态世界的 MDP 马尔可夫模型矩阵，并最终抽象出能够增量后反向回传价值影响力的递归范式：Bellman 方程。
 
-## 6. 下一步方向
-通过代码实现 Bandit 与 Bellman backup，目前已建立了基本的 RL 探索与利用的思维，并理解了价值函数的递归。
-接下来的核心内容将进入 Tabular RL 主线：
-- Policy Evaluation（策略评估）
-- Policy Improvement（策略提升）
-- Policy Iteration（策略迭代）
-- Value Iteration（价值迭代）
-
-准备好让 MDP 与 Bellman Equation 真正转化为可求解的智能体算法。
+沿着此理论基石向上仰望，下一步的发展即直接衍生出能够依靠编程实现解构寻优的 **Tabular RL（表格型动态规划方法）算法族列**：
+- **Policy Evaluation** $\rightarrow$ **Policy Improvement** $\rightarrow$ **Policy/Value Iteration**
+从公式纸面推演，正式走向大规模矩阵迭代寻解方案的工程构建之战。
