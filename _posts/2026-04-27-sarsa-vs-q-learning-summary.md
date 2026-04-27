@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "强化学习控制基础：第一性原理彻解 SARSA 与 Q-Learning"
-date: 2026-04-27 18:00:00 +0800
+date: 2026-04-27 17:00:00 +0800
 tags: [Reinforcement Learning, 学习笔记]
 categories: [AI]
 ---
